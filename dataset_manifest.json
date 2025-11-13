@@ -1,0 +1,13 @@
+{
+  "train_csv": "merged_plus_synth_split_train_uniq.csv",
+  "val_csv":   "merged_plus_synth_split_val_uniq.csv",
+  "test_csv":  "merged_plus_synth_split_test_uniq.csv",
+
+  "target_col": "label",
+
+  "text_cols": {
+    "url":     "url",
+    "subject": "subject",
+    "body":    "body"
+  }
+}

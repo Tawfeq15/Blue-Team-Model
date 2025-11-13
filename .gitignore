@@ -1,0 +1,18 @@
+﻿# بيئة التطوير
+.venv/
+.vscode/
+__pycache__/
+*.pyc
+
+# لوجات وملفات تدريب كبيرة
+catboost_info/
+catboost_info_bak/
+
+# الداتا الخام الكبيرة
+dataset/
+PhishingData/_extracted/
+PhishingData/dataset/
+PhishingData/data/
+PhishingData/features/
+PhishingData/artifacts/
+PhishingData/tools/tmp/
