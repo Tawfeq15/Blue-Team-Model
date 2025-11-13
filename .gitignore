@@ -1,30 +1,5 @@
-﻿# بيئة التطوير
+# بيئة التطوير
 .venv/
 .vscode/
 __pycache__/
 *.pyc
-
-# لوجات وملفات تدريب كبيرة
-catboost_info/
-catboost_info_bak/
-
-# الداتا الخام الكبيرة
-dataset/
-PhishingData/_extracted/
-PhishingData/dataset/
-PhishingData/data/
-
-# Features - نسمح بس للـ JSON specs
-PhishingData/features/*
-!PhishingData/features/*.json
-
-# Artifacts - نسمح بس للموديلات الأساسية
-PhishingData/artifacts/*
-!PhishingData/artifacts/*.pkl
-!PhishingData/artifacts/*.json
-
-PhishingData/tools/tmp/
-
-# Exclude large files
-PhishingData/artifacts/feature_pipeline.pkl
-PhishingData/artifacts/*.rar
