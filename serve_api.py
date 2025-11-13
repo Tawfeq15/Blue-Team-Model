@@ -124,7 +124,7 @@ def _predict_proba(txt: str) -> float:
     """Get phishing probability for text"""
     try:
         df = _to_df_text(txt)
-        
+
         # Apply cleaner if available
         if cleaner is not None:
             try:
@@ -134,10 +134,41 @@ def _predict_proba(txt: str) -> float:
                     df = cleaner(df)
             except Exception as e:
                 log.warning("Cleaner failed: %s", e)
-        
+
         # Transform and predict
         X = feature_pipeline.transform(df)
-        proba = model.predict_proba(X)[:, 1][0]
+
+        # Fix inhomogeneous array issues
+        try:
+            # Convert to dense array if sparse
+            if hasattr(X, 'toarray'):
+                X_dense = X.toarray()
+            else:
+                X_dense = np.asarray(X)
+
+            # Check for and flatten any sequences in the array
+            if X_dense.dtype == object:
+                log.warning("Feature array has object dtype - attempting to flatten")
+                flattened = []
+                for val in X_dense.ravel():
+                    if isinstance(val, (list, tuple, np.ndarray)):
+                        # If it's a sequence, take the first element or mean
+                        if len(val) > 0:
+                            flattened.append(float(val[0]) if hasattr(val[0], '__float__') else 0.0)
+                        else:
+                            flattened.append(0.0)
+                    else:
+                        flattened.append(float(val) if hasattr(val, '__float__') else 0.0)
+                X_dense = np.array(flattened).reshape(1, -1)
+
+            # Ensure proper dtype
+            X_fixed = X_dense.astype(np.float64, copy=False)
+
+        except Exception as e:
+            log.error("Failed to fix feature array: %s", e)
+            raise
+
+        proba = model.predict_proba(X_fixed)[:, 1][0]
         return float(proba)
     except Exception as e:
         log.error("Prediction failed: %s", e, exc_info=True)
