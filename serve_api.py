@@ -140,32 +140,61 @@ def _predict_proba(txt: str) -> float:
 
         # Fix inhomogeneous array issues
         try:
-            # Convert to dense array if sparse
-            if hasattr(X, 'toarray'):
+            # Check if X is a tuple/list of arrays (e.g., for FeatureUnion with different outputs)
+            if isinstance(X, (tuple, list)):
+                log.info(f"Feature output is a tuple/list with {len(X)} elements")
+                # Concatenate all arrays horizontally
+                arrays = []
+                for i, arr in enumerate(X):
+                    if hasattr(arr, 'toarray'):
+                        arrays.append(arr.toarray())
+                    elif isinstance(arr, np.ndarray):
+                        if arr.ndim == 1:
+                            arrays.append(arr.reshape(1, -1))
+                        else:
+                            arrays.append(arr)
+                    else:
+                        arrays.append(np.asarray(arr).reshape(1, -1))
+                X_dense = np.hstack(arrays)
+            # Convert sparse matrix to dense
+            elif hasattr(X, 'toarray'):
                 X_dense = X.toarray()
+            # Handle numpy array
+            elif isinstance(X, np.ndarray):
+                X_dense = X
+            # Try to convert to numpy array
             else:
-                X_dense = np.asarray(X)
+                try:
+                    X_dense = np.asarray(X, dtype=np.float64)
+                except (ValueError, TypeError):
+                    # If direct conversion fails, try element by element
+                    log.warning("Direct conversion failed, trying element-wise conversion")
+                    X_dense = np.array([[float(v) if not isinstance(v, (list, tuple, np.ndarray)) else float(v[0])
+                                        for v in np.asarray(X).ravel()]])
 
-            # Check for and flatten any sequences in the array
+            # Check for object dtype and flatten sequences
             if X_dense.dtype == object:
-                log.warning("Feature array has object dtype - attempting to flatten")
+                log.warning("Feature array has object dtype - flattening sequences")
                 flattened = []
                 for val in X_dense.ravel():
                     if isinstance(val, (list, tuple, np.ndarray)):
-                        # If it's a sequence, take the first element or mean
                         if len(val) > 0:
                             flattened.append(float(val[0]) if hasattr(val[0], '__float__') else 0.0)
                         else:
                             flattened.append(0.0)
                     else:
                         flattened.append(float(val) if hasattr(val, '__float__') else 0.0)
-                X_dense = np.array(flattened).reshape(1, -1)
+                X_dense = np.array(flattened, dtype=np.float64).reshape(1, -1)
 
-            # Ensure proper dtype
+            # Ensure proper shape and dtype
+            if X_dense.ndim == 1:
+                X_dense = X_dense.reshape(1, -1)
             X_fixed = X_dense.astype(np.float64, copy=False)
 
+            log.info(f"Final feature shape: {X_fixed.shape}, dtype: {X_fixed.dtype}")
+
         except Exception as e:
-            log.error("Failed to fix feature array: %s", e)
+            log.error("Failed to fix feature array: %s", e, exc_info=True)
             raise
 
         proba = model.predict_proba(X_fixed)[:, 1][0]
