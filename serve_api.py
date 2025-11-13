@@ -124,7 +124,7 @@ def _predict_proba(txt: str) -> float:
     """Get phishing probability for text"""
     try:
         df = _to_df_text(txt)
-        
+
         # Apply cleaner if available
         if cleaner is not None:
             try:
@@ -134,10 +134,107 @@ def _predict_proba(txt: str) -> float:
                     df = cleaner(df)
             except Exception as e:
                 log.warning("Cleaner failed: %s", e)
-        
+
         # Transform and predict
         X = feature_pipeline.transform(df)
-        proba = model.predict_proba(X)[:, 1][0]
+
+        # Fix inhomogeneous array issues
+        try:
+            # Check if X is a tuple/list of arrays (e.g., for FeatureUnion with different outputs)
+            if isinstance(X, (tuple, list)):
+                log.info(f"Feature output is a tuple/list with {len(X)} elements")
+
+                # Determine which features to use based on model's expected n_features
+                if hasattr(model, 'n_features_in_'):
+                    expected_features = model.n_features_in_
+                elif hasattr(model, 'estimators_') and len(model.estimators_) > 0:
+                    # For CalibratedClassifierCV, get n_features from base estimator
+                    base_est = model.estimators_[0]
+                    if hasattr(base_est, 'estimator'):
+                        base_est = base_est.estimator
+                    if hasattr(base_est, 'n_features_in_'):
+                        expected_features = base_est.n_features_in_
+                    elif hasattr(base_est, '_n_features'):
+                        expected_features = base_est._n_features
+                    else:
+                        expected_features = None
+                else:
+                    expected_features = None
+
+                log.info(f"Model expects {expected_features} features")
+
+                # Convert each array and find which one matches
+                arrays = []
+                for i, arr in enumerate(X):
+                    if hasattr(arr, 'toarray'):
+                        arr_dense = arr.toarray()
+                    elif isinstance(arr, np.ndarray):
+                        if arr.ndim == 1:
+                            arr_dense = arr.reshape(1, -1)
+                        else:
+                            arr_dense = arr
+                    else:
+                        arr_dense = np.asarray(arr).reshape(1, -1)
+
+                    arrays.append(arr_dense)
+                    log.info(f"  Array {i}: shape {arr_dense.shape}")
+
+                # If model expects specific number of features, use the matching array
+                if expected_features:
+                    for i, arr in enumerate(arrays):
+                        if arr.shape[1] == expected_features:
+                            log.info(f"Using array {i} with shape {arr.shape} (matches model)")
+                            X_dense = arr
+                            break
+                    else:
+                        # No exact match, try concatenating
+                        log.warning(f"No array matches expected features {expected_features}, concatenating all")
+                        X_dense = np.hstack(arrays)
+                else:
+                    # No expected features info, concatenate all
+                    X_dense = np.hstack(arrays)
+            # Convert sparse matrix to dense
+            elif hasattr(X, 'toarray'):
+                X_dense = X.toarray()
+            # Handle numpy array
+            elif isinstance(X, np.ndarray):
+                X_dense = X
+            # Try to convert to numpy array
+            else:
+                try:
+                    X_dense = np.asarray(X, dtype=np.float64)
+                except (ValueError, TypeError):
+                    # If direct conversion fails, try element by element
+                    log.warning("Direct conversion failed, trying element-wise conversion")
+                    X_dense = np.array([[float(v) if not isinstance(v, (list, tuple, np.ndarray)) else float(v[0])
+                                        for v in np.asarray(X).ravel()]])
+
+            # Check for object dtype and flatten sequences
+            if X_dense.dtype == object:
+                log.warning("Feature array has object dtype - flattening sequences")
+                flattened = []
+                for val in X_dense.ravel():
+                    if isinstance(val, (list, tuple, np.ndarray)):
+                        if len(val) > 0:
+                            flattened.append(float(val[0]) if hasattr(val[0], '__float__') else 0.0)
+                        else:
+                            flattened.append(0.0)
+                    else:
+                        flattened.append(float(val) if hasattr(val, '__float__') else 0.0)
+                X_dense = np.array(flattened, dtype=np.float64).reshape(1, -1)
+
+            # Ensure proper shape and dtype
+            if X_dense.ndim == 1:
+                X_dense = X_dense.reshape(1, -1)
+            X_fixed = X_dense.astype(np.float64, copy=False)
+
+            log.info(f"Final feature shape: {X_fixed.shape}, dtype: {X_fixed.dtype}")
+
+        except Exception as e:
+            log.error("Failed to fix feature array: %s", e, exc_info=True)
+            raise
+
+        proba = model.predict_proba(X_fixed)[:, 1][0]
         return float(proba)
     except Exception as e:
         log.error("Prediction failed: %s", e, exc_info=True)
@@ -875,7 +972,14 @@ def explain(
 # ================== Run Instructions ==================
 if __name__ == "__main__":
     import uvicorn
-    
+    import argparse
+
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Phishing Detection API Server")
+    parser.add_argument("--port", type=int, default=8000, help="Port to run the server on (default: 8000)")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind to (default: 0.0.0.0)")
+    args = parser.parse_args()
+
     print("=" * 70)
     print("🛡️  Phishing Detection API Server")
     print("=" * 70)
@@ -885,10 +989,10 @@ if __name__ == "__main__":
     print(f"Recall: {model_metrics.get('recall', 0):.2%}")
     print("=" * 70)
     print("\n🌐 Starting server...")
-    print("   Web UI: http://localhost:8000")
-    print("   API Docs: http://localhost:8000/docs")
-    print("   Health: http://localhost:8000/health")
+    print(f"   Web UI: http://localhost:{args.port}")
+    print(f"   API Docs: http://localhost:{args.port}/docs")
+    print(f"   Health: http://localhost:{args.port}/health")
     print("\n📝 API Key: dev-key")
     print("\nPress Ctrl+C to stop\n")
-    
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+    uvicorn.run(app, host=args.host, port=args.port)

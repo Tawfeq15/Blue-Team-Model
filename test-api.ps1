@@ -35,7 +35,7 @@ if ([string]::IsNullOrEmpty($TestEmail)) {
 function Test-PhishingInvokeWebRequest {
     param([string]$Text, [string]$Url, [string]$Key)
 
-    Write-Host "[Method 1] Using Invoke-WebRequest..." -ForegroundColor Green
+    Write-Host "Method 1: Using Invoke-WebRequest..." -ForegroundColor Green
 
     try {
         $headers = @{
@@ -79,7 +79,7 @@ function Test-PhishingInvokeWebRequest {
 function Test-PhishingInvokeRestMethod {
     param([string]$Text, [string]$Url, [string]$Key)
 
-    Write-Host "[Method 2] Using Invoke-RestMethod..." -ForegroundColor Green
+    Write-Host "Method 2: Using Invoke-RestMethod..." -ForegroundColor Green
 
     try {
         $headers = @{
@@ -120,7 +120,7 @@ function Test-PhishingInvokeRestMethod {
 function Test-PhishingCurl {
     param([string]$Text, [string]$Url, [string]$Key)
 
-    Write-Host "[Method 3] Using curl.exe (real curl)..." -ForegroundColor Green
+    Write-Host "Method 3: Using curl.exe (real curl)..." -ForegroundColor Green
 
     try {
         # Create JSON body

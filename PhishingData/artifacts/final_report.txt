@@ -1,0 +1,26 @@
+========================  FINAL REPORT  ========================
+
+Generated: 2025-11-09T21:51:46.793061
+Training Time: 5711.37 seconds
+
+BEST MODEL
+----------
+Model: LightGBM
+Optimal Threshold: 0.500
+
+TEST PERFORMANCE
+----------------
+Accuracy : 0.9968
+Precision: 0.9980
+Recall   : 0.9944
+F1 Score : 0.9962
+ROC-AUC  : 0.9995
+PR-AUC   : 0.9994
+Recall@FPR≤0.3%: 0.9948
+Brier Score   : 0.0027
+
+Confusion Matrix:
+TN: 23617  FP: 34
+FN: 98  TP: 17288
+
+===============================================================

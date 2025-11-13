@@ -1,0 +1,33 @@
+{
+  "version": "2.0",
+  "notes": "Email-centric features from subject/body only (no headers required).",
+  "features": [
+    {"name": "subj_len", "modality": "email", "type": "len", "source": "email_subject"},
+    {"name": "body_len", "modality": "email", "type": "len", "source": "email_body"},
+    {"name": "subj_words", "modality": "email", "type": "word_count", "source": "email_subject"},
+    {"name": "body_words", "modality": "email", "type": "word_count", "source": "email_body"},
+    {"name": "body_entropy", "modality": "email", "type": "entropy", "source": "email_body"},
+    {"name": "num_urls_body", "modality": "email", "type": "regex_count", "pattern": "(?i)\\bhttps?://", "source": "email_body"},
+    {"name": "num_emails_body", "modality": "email", "type": "regex_count", "pattern": "(?i)[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}", "source": "email_body"},
+    {"name": "num_phones_body", "modality": "email", "type": "regex_count", "pattern": "(?i)(\\+?\\d[\\d\\s().-]{7,}\\d)", "source": "email_body"},
+    {"name": "has_html_anchor", "modality": "email", "type": "regex_bool", "pattern": "<a\\s+[^>]*href=", "source": "email_body"},
+    {"name": "has_inline_js", "modality": "email", "type": "regex_bool", "pattern": "<script\\b", "source": "email_body"},
+    {"name": "has_form", "modality": "email", "type": "regex_bool", "pattern": "<form\\b", "source": "email_body"},
+    {"name": "subj_has_urgent", "modality": "email", "type": "regex_bool", "pattern": "(?i)urgent|immediately|action required|verify|update", "source": "email_subject"},
+    {"name": "subj_has_urgent_ar", "modality": "email", "type": "regex_bool", "pattern": "عاجل|فوري|مطلوب إجراء|تحقق|تحديث", "source": "email_subject"},
+    {"name": "body_has_threat", "modality": "email", "type": "regex_bool", "pattern": "(?i)suspend|suspension|disabled|limit|violation|penalty", "source": "email_body"},
+    {"name": "body_has_threat_ar", "modality": "email", "type": "regex_bool", "pattern": "تعليق|إيقاف|تقييد|مخالفة|عقوبة|تنبيه", "source": "email_body"},
+    {"name": "body_money_terms", "modality": "email", "type": "regex_count", "pattern": "(?i)invoice|payment|bank|wallet|crypto|refund|prize|lottery|transfer", "source": "email_body"},
+    {"name": "body_money_terms_ar", "modality": "email", "type": "regex_count", "pattern": "فاتورة|دفعة|بنك|محفظة|تحويل|جائزة|سحب|استرداد|بطاقة|رصيد", "source": "email_body"},
+    {"name": "has_credentials_req", "modality": "email", "type": "regex_bool", "pattern": "(?i)password|passcode|otp|two[- ]?factor|code", "source": "email_body"},
+    {"name": "has_credentials_req_ar", "modality": "email", "type": "regex_bool", "pattern": "كلمة\\s?المرور|المرور|رمز|توثيق|تحقق\\s?ثنائي|كود", "source": "email_body"},
+    {"name": "arabic_ratio_body", "modality": "email", "type": "char_ratio", "charset": "arabic", "source": "email_body"},
+    {"name": "latin_ratio_body", "modality": "email", "type": "char_ratio", "charset": "latin", "source": "email_body"},
+    {"name": "has_whatsapp", "modality": "email", "type": "regex_bool", "pattern": "(?i)whatsapp|واتساب", "source": "email_body"},
+    {"name": "has_crypto_addr_like", "modality": "email", "type": "regex_bool", "pattern": "\\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\\b|\\b0x[a-fA-F0-9]{40}\\b", "source": "email_body"},
+    {"name": "has_iban_like", "modality": "email", "type": "regex_bool", "pattern": "\\b[A-Z]{2}\\d{2}[A-Z0-9]{11,30}\\b", "source": "email_body"},
+    {"name": "subj_excess_punct", "modality": "email", "type": "regex_count", "pattern": "[!?]{2,}", "source": "email_subject"},
+    {"name": "body_excess_punct", "modality": "email", "type": "regex_count", "pattern": "[!?]{2,}", "source": "email_body"},
+    {"name": "url_shortener_in_body", "modality": "email", "type": "regex_bool", "pattern": "(?i)(bit\\.ly|t\\.co|tinyurl\\.com|is\\.gd|cutt\\.ly|rebrand\\.ly|t\\.ly)/", "source": "email_body"}
+  ]
+}
