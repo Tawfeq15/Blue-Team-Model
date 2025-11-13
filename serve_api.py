@@ -875,7 +875,14 @@ def explain(
 # ================== Run Instructions ==================
 if __name__ == "__main__":
     import uvicorn
-    
+    import argparse
+
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Phishing Detection API Server")
+    parser.add_argument("--port", type=int, default=8000, help="Port to run the server on (default: 8000)")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind to (default: 0.0.0.0)")
+    args = parser.parse_args()
+
     print("=" * 70)
     print("🛡️  Phishing Detection API Server")
     print("=" * 70)
@@ -885,10 +892,10 @@ if __name__ == "__main__":
     print(f"Recall: {model_metrics.get('recall', 0):.2%}")
     print("=" * 70)
     print("\n🌐 Starting server...")
-    print("   Web UI: http://localhost:8000")
-    print("   API Docs: http://localhost:8000/docs")
-    print("   Health: http://localhost:8000/health")
+    print(f"   Web UI: http://localhost:{args.port}")
+    print(f"   API Docs: http://localhost:{args.port}/docs")
+    print(f"   Health: http://localhost:{args.port}/health")
     print("\n📝 API Key: dev-key")
     print("\nPress Ctrl+C to stop\n")
-    
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+    uvicorn.run(app, host=args.host, port=args.port)
