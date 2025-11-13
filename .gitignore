@@ -13,6 +13,14 @@ dataset/
 PhishingData/_extracted/
 PhishingData/dataset/
 PhishingData/data/
-PhishingData/features/
-PhishingData/artifacts/
+
+# Features - نسمح بس للـ JSON specs
+PhishingData/features/*
+!PhishingData/features/*.json
+
+# Artifacts - نسمح بس للموديلات الأساسية
+PhishingData/artifacts/*
+!PhishingData/artifacts/*.pkl
+!PhishingData/artifacts/*.json
+
 PhishingData/tools/tmp/
