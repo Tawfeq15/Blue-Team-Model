@@ -143,19 +143,56 @@ def _predict_proba(txt: str) -> float:
             # Check if X is a tuple/list of arrays (e.g., for FeatureUnion with different outputs)
             if isinstance(X, (tuple, list)):
                 log.info(f"Feature output is a tuple/list with {len(X)} elements")
-                # Concatenate all arrays horizontally
+
+                # Determine which features to use based on model's expected n_features
+                if hasattr(model, 'n_features_in_'):
+                    expected_features = model.n_features_in_
+                elif hasattr(model, 'estimators_') and len(model.estimators_) > 0:
+                    # For CalibratedClassifierCV, get n_features from base estimator
+                    base_est = model.estimators_[0]
+                    if hasattr(base_est, 'estimator'):
+                        base_est = base_est.estimator
+                    if hasattr(base_est, 'n_features_in_'):
+                        expected_features = base_est.n_features_in_
+                    elif hasattr(base_est, '_n_features'):
+                        expected_features = base_est._n_features
+                    else:
+                        expected_features = None
+                else:
+                    expected_features = None
+
+                log.info(f"Model expects {expected_features} features")
+
+                # Convert each array and find which one matches
                 arrays = []
                 for i, arr in enumerate(X):
                     if hasattr(arr, 'toarray'):
-                        arrays.append(arr.toarray())
+                        arr_dense = arr.toarray()
                     elif isinstance(arr, np.ndarray):
                         if arr.ndim == 1:
-                            arrays.append(arr.reshape(1, -1))
+                            arr_dense = arr.reshape(1, -1)
                         else:
-                            arrays.append(arr)
+                            arr_dense = arr
                     else:
-                        arrays.append(np.asarray(arr).reshape(1, -1))
-                X_dense = np.hstack(arrays)
+                        arr_dense = np.asarray(arr).reshape(1, -1)
+
+                    arrays.append(arr_dense)
+                    log.info(f"  Array {i}: shape {arr_dense.shape}")
+
+                # If model expects specific number of features, use the matching array
+                if expected_features:
+                    for i, arr in enumerate(arrays):
+                        if arr.shape[1] == expected_features:
+                            log.info(f"Using array {i} with shape {arr.shape} (matches model)")
+                            X_dense = arr
+                            break
+                    else:
+                        # No exact match, try concatenating
+                        log.warning(f"No array matches expected features {expected_features}, concatenating all")
+                        X_dense = np.hstack(arrays)
+                else:
+                    # No expected features info, concatenate all
+                    X_dense = np.hstack(arrays)
             # Convert sparse matrix to dense
             elif hasattr(X, 'toarray'):
                 X_dense = X.toarray()
