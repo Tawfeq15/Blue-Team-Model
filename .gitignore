@@ -24,3 +24,7 @@ PhishingData/artifacts/*
 !PhishingData/artifacts/*.json
 
 PhishingData/tools/tmp/
+
+# Exclude large files
+PhishingData/artifacts/feature_pipeline.pkl
+PhishingData/artifacts/*.rar

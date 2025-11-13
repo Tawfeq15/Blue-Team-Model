@@ -1,0 +1,12 @@
+{
+  "best_model_name": "LightGBM",
+  "best_threshold": 0.5,
+  "use_tfidf": true,
+  "feature_order": [
+    "url_entropy",
+    "has_homograph",
+    "url_length",
+    "num_dots",
+    "num_digits_in_url"
+  ]
+}

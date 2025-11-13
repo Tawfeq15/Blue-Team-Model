@@ -1,0 +1,18 @@
+{
+  "version": "2.0",
+  "notes": "Common, language-agnostic helpers & ratios.",
+  "features": [
+    {"name": "feat_len_chars", "modality": "both", "type": "len", "source": "text_joined"},
+    {"name": "feat_len_words", "modality": "both", "type": "word_count", "source": "text_joined"},
+    {"name": "feat_entropy_chars", "modality": "both", "type": "entropy", "source": "text_joined"},
+    {"name": "feat_ratio_arabic", "modality": "both", "type": "char_ratio", "charset": "arabic", "source": "text_joined"},
+    {"name": "feat_ratio_latin", "modality": "both", "type": "char_ratio", "charset": "latin", "source": "text_joined"},
+    {"name": "feat_ratio_digits", "modality": "both", "type": "char_ratio", "charset": "digits", "source": "text_joined"},
+    {"name": "feat_ratio_punct", "modality": "both", "type": "char_ratio", "charset": "punct", "source": "text_joined"},
+    {"name": "feat_unique_char_count", "modality": "both", "type": "unique_chars", "source": "text_joined"},
+    {"name": "feat_max_char_run", "modality": "both", "type": "max_run_len", "source": "text_joined"},
+    {"name": "feat_has_rtl_marks", "modality": "both", "type": "regex_bool", "pattern": "\\u200f|\\u202b|\\u202e", "source": "text_joined"},
+    {"name": "feat_num_emails_in_text", "modality": "both", "type": "regex_count", "pattern": "(?i)[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}", "source": "text_joined"},
+    {"name": "feat_num_urls_in_text", "modality": "both", "type": "regex_count", "pattern": "(?i)\\bhttps?://", "source": "text_joined"}
+  ]
+}
