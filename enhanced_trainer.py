@@ -922,7 +922,6 @@ class ModelBuilders:
             min_data_in_leaf=20,
             min_data_in_bin=3,
             max_bin=255,
-            device_type="cpu",
             random_state=42,
             n_jobs=0,
 
