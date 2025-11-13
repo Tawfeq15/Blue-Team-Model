@@ -376,5 +376,265 @@ python .\App.py
 ---
 
 **بالتوفيق! 🚀**
-إذا واجهت أي مشكلة، اسأل مباشرة!#   B l u e - T e a m - M o d e l  
+إذا واجهت أي مشكلة، اسأل مباشرة!
+
+---
+
+## 🌐 استخدام الـ API من PowerShell
+
+### ❌ المشكلة: curl في PowerShell لا يشتغل!
+
+في PowerShell، الأمر `curl` هو alias لـ `Invoke-WebRequest` وله syntax مختلف عن curl الأصلي.
+
+**الخطأ الشائع:**
+```powershell
+# ❌ هذا لن يشتغل في PowerShell!
+curl -X POST "http://localhost:8000/predict" `
+  -H "Content-Type: application/json" `
+  -d '{"text": "test"}'
+```
+
+**الخطأ:**
+```
+Cannot bind parameter 'Headers'. Cannot convert the "Content-Type: application/json"
+value of type "System.String" to type "System.Collections.IDictionary".
+```
+
+---
+
+### ✅ الحل: 3 طرق صحيحة للاستخدام
+
+#### 🎯 الطريقة 1: استخدم السكريبت الجاهز (الأسهل!)
+
+```powershell
+# شغّل السيرفر أولاً
+python serve_api.py
+
+# في terminal آخر، استخدم السكريبت الجاهز
+.\test-api.ps1
+
+# أو اختبر email معين
+.\test-api.ps1 -TestEmail "Click here to verify your account"
+```
+
+السكريبت `test-api.ps1` يوريك 3 طرق مختلفة للاستدعاء!
+
+---
+
+#### 🎯 الطريقة 2: Invoke-RestMethod (الأفضل!)
+
+```powershell
+# إعداد الـ headers
+$headers = @{
+    "x-api-key" = "dev-key"
+}
+
+# إعداد الـ body
+$body = @{
+    text = "Click here to verify your account: http://login-secure-check.com/verify"
+} | ConvertTo-Json
+
+# إرسال الطلب
+$result = Invoke-RestMethod -Uri "http://localhost:8000/predict" `
+    -Method POST `
+    -Headers $headers `
+    -Body $body `
+    -ContentType "application/json"
+
+# عرض النتيجة
+Write-Host "Label: $($result.label)"
+Write-Host "Probability: $($result.probability * 100)%"
+Write-Host "Is Phishing: $($result.is_phishing)"
+```
+
+---
+
+#### 🎯 الطريقة 3: Invoke-WebRequest (تفصيلية)
+
+```powershell
+# إعداد الـ headers
+$headers = @{
+    "Content-Type" = "application/json"
+    "x-api-key" = "dev-key"
+}
+
+# إعداد الـ body
+$body = @{
+    text = "URGENT! Your account will be closed!"
+} | ConvertTo-Json
+
+# إرسال الطلب
+$response = Invoke-WebRequest -Uri "http://localhost:8000/predict" `
+    -Method POST `
+    -Headers $headers `
+    -Body $body
+
+# تحويل النتيجة من JSON
+$result = $response.Content | ConvertFrom-Json
+
+# عرض النتيجة
+Write-Host "Label: $($result.label)" -ForegroundColor $(if($result.is_phishing){"Red"}else{"Green"})
+Write-Host "Confidence: $($result.confidence)"
+Write-Host "Response Time: $($result.response_time_ms) ms"
+```
+
+---
+
+#### 🎯 الطريقة 4: استخدام curl.exe الحقيقي
+
+```powershell
+# استخدم curl.exe بدلاً من الـ alias
+curl.exe -X POST "http://localhost:8000/predict" `
+  -H "Content-Type: application/json" `
+  -H "x-api-key: dev-key" `
+  -d '{\"text\": \"Click here to verify\"}'
+```
+
+---
+
+### 📊 اختبار الـ Endpoints الأخرى
+
+#### Health Check (بدون API key)
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/health"
+```
+
+#### Statistics (بدون API key)
+```powershell
+Invoke-RestMethod -Uri "http://localhost:8000/stats"
+```
+
+#### Batch Prediction (اختبار عدة emails مرة واحدة)
+```powershell
+$headers = @{
+    "x-api-key" = "dev-key"
+}
+
+$body = @{
+    texts = @(
+        "Meeting at 10 AM tomorrow",
+        "URGENT! Click here NOW!",
+        "Thanks for the update"
+    )
+} | ConvertTo-Json
+
+$result = Invoke-RestMethod -Uri "http://localhost:8000/predict/batch" `
+    -Method POST `
+    -Headers $headers `
+    -Body $body `
+    -ContentType "application/json"
+
+Write-Host "Total: $($result.total)"
+Write-Host "Phishing: $($result.phishing_count)"
+Write-Host "Safe: $($result.safe_count)"
+```
+
+#### Explanation (فهم سبب التصنيف)
+```powershell
+$headers = @{
+    "x-api-key" = "dev-key"
+}
+
+$body = @{
+    text = "URGENT! Verify your account now!"
+} | ConvertTo-Json
+
+$result = Invoke-RestMethod -Uri "http://localhost:8000/explain" `
+    -Method POST `
+    -Headers $headers `
+    -Body $body `
+    -ContentType "application/json"
+
+# عرض الكلمات المؤثرة في التصنيف
+Write-Host "Top Phishing Indicators:"
+$result.explanation.top_positive | ForEach-Object {
+    Write-Host "  $($_[0]): $($_[1])" -ForegroundColor Red
+}
+```
+
+---
+
+### 🔑 ملاحظات مهمة
+
+1. **API Key مطلوب**: جميع endpoints (ما عدا `/`, `/health`, `/stats`) تحتاج API key
+   - الـ key الافتراضي: `dev-key`
+   - يمكنك تغييره بـ: `$env:API_KEY='your-custom-key'`
+
+2. **السيرفر يجب يكون شغال**: قبل الاستدعاء، تأكد من:
+   ```powershell
+   python serve_api.py
+   ```
+
+3. **الـ Web UI**: افتح المتصفح على `http://localhost:8000` لاختبار سريع بدون كود!
+
+---
+
+### 🚨 حل مشاكل شائعة
+
+#### المشكلة: "Invalid API key"
+```powershell
+# تأكد من إضافة الـ header الصحيح
+$headers = @{
+    "x-api-key" = "dev-key"  # ✓ الاسم الصحيح
+}
+```
+
+#### المشكلة: "Cannot bind parameter 'Headers'"
+```powershell
+# ❌ خطأ - تستخدم curl alias
+curl -H "Content-Type: application/json"
+
+# ✓ صحيح - استخدم Invoke-RestMethod أو curl.exe
+Invoke-RestMethod -Headers @{"Content-Type"="application/json"}
+# أو
+curl.exe -H "Content-Type: application/json"
+```
+
+#### المشكلة: السيرفر لا يرد
+```powershell
+# تأكد من أن السيرفر شغال
+# افتح terminal وشغّل:
+python serve_api.py
+
+# تأكد من الـ port صحيح (8000 افتراضي)
+netstat -ano | findstr :8000
+```
+
+---
+
+### 📝 أمثلة جاهزة للنسخ
+
+#### مثال كامل - اختبار سريع
+```powershell
+# 1. شغّل السيرفر (في terminal منفصل)
+python serve_api.py
+
+# 2. اختبر API
+$result = Invoke-RestMethod -Uri "http://localhost:8000/predict" `
+    -Method POST `
+    -Headers @{"x-api-key"="dev-key"} `
+    -Body (@{text="URGENT! Verify now!"} | ConvertTo-Json) `
+    -ContentType "application/json"
+
+# 3. اعرض النتيجة
+Write-Host "🛡️ Result: $($result.label)" -ForegroundColor $(if($result.is_phishing){"Red"}else{"Green"})
+```
+
+#### دالة جاهزة للاستخدام المتكرر
+```powershell
+function Test-Phishing {
+    param([string]$EmailText)
+
+    $result = Invoke-RestMethod -Uri "http://localhost:8000/predict" `
+        -Method POST `
+        -Headers @{"x-api-key"="dev-key"} `
+        -Body (@{text=$EmailText} | ConvertTo-Json) `
+        -ContentType "application/json"
+
+    return $result
+}
+
+# استخدامها
+Test-Phishing "Click here to claim your prize!"
+```#   B l u e - T e a m - M o d e l  
  
